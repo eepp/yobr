@@ -92,3 +92,9 @@ Click a dependency package build state to select it globally.
 yobr periodically (every two seconds by default) checks the existence of
 package build stamp files to update its window. Click **State** to
 change the refresh rate. The status bar shows the last update time.
+
+== Credits
+
+`yobr/icon.png` made by
+https://www.flaticon.com/authors/srip[srip] from
+https://www.flaticon.com/[www.flaticon.com].

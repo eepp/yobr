@@ -40,6 +40,9 @@ setup(name='yobr',
       author_email='eeppeliteloop@gmail.com',
       url='https://github.com/eepp/yobr',
       packages=['yobr'],
+      package_data={
+          'yobr': ['*.png']
+      },
       install_requires=['setuptools', 'PyQt5'],
       entry_points={
           'gui_scripts': [

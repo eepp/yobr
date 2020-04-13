@@ -29,6 +29,7 @@ import webbrowser
 import functools
 import datetime
 import signal
+import pkg_resources
 import PyQt5 as qtwidgets
 import PyQt5.QtWidgets as qtwidgets
 import PyQt5.QtCore as qtcore
@@ -700,9 +701,16 @@ class _YoBrWindow(qtwidgets.QMainWindow):
 
         self._installed_pbar = create_pbar(count, '%v/%m packages installed')
 
+    def _set_icon(self):
+        icon_path = pkg_resources.resource_filename(__name__, 'icon.png')
+        self.setWindowIcon(qtgui.QIcon(icon_path))
+
     def _build_ui(self):
         # set window's title from application name
         self.setWindowTitle(self._app.applicationName())
+
+        # set icon
+        self._set_icon()
 
         # main layout is a vertical box
         main_layout = qtwidgets.QVBoxLayout()
