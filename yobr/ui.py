@@ -25,7 +25,6 @@ import sys
 import math
 import os.path
 import logging
-import webbrowser
 import functools
 import datetime
 import signal
@@ -620,8 +619,17 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         self._update_deps_from_state()
 
 
+class _AutoAdjustDialog(qtwidgets.QDialog):
+    def showEvent(self, event):
+        res = super().showEvent(event)
+
+        # adjust this dialog's size to content
+        self.setFixedSize(self.sizeHint())
+        return res
+
+
 # the build stage legend dialog
-class _BuildStageLegendDialog(qtwidgets.QDialog):
+class _BuildStageLegendDialog(_AutoAdjustDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle('Build stage legend')
@@ -651,12 +659,49 @@ class _BuildStageLegendDialog(qtwidgets.QDialog):
         add_label(yobr.br.PkgBuildStage.INSTALLED)
         self.setLayout(vbox)
 
-    def showEvent(self, event):
-        res = super().showEvent(event)
 
-        # adjust this dialog's size to content
-        self.setFixedSize(self.sizeHint())
-        return res
+_ICON_PATH = pkg_resources.resource_filename(__name__, 'icon.png')
+
+
+# the about dialog
+class _AboutDialog(_AutoAdjustDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle('About yobr')
+        self.setModal(True)
+        self.setSizeGripEnabled(False)
+        self._build_ui()
+
+    def _build_ui(self):
+        hbox = qtwidgets.QHBoxLayout()
+        pixmap = qtgui.QPixmap(_ICON_PATH).scaled(128, 128,
+                                                  qtcore.Qt.IgnoreAspectRatio,
+                                                  qtcore.Qt.SmoothTransformation)
+        lbl = qtwidgets.QLabel()
+        lbl.setPixmap(pixmap)
+        hbox.addWidget(lbl)
+        self.setLayout(hbox)
+        vbox = qtwidgets.QVBoxLayout()
+        lbl = qtwidgets.QLabel('YO Buildroot!')
+        font = lbl.font()
+        font.setPointSize(14)
+        font.setItalic(True)
+        font.setBold(True)
+        lbl.setFont(font)
+        vbox.addWidget(lbl)
+        lbl = qtwidgets.QLabel('v{}'.format(yobr.__version__))
+        lbl.setStyleSheet('color: rgba(0, 0, 0, .6); font-style: italic;')
+        vbox.addWidget(lbl)
+        vbox.addWidget(qtwidgets.QLabel())
+        lbl = qtwidgets.QLabel('<b>Author</b>: <a href="https://eepp.ca/">Philippe Proulx</a>')
+        vbox.addWidget(lbl)
+        lbl = qtwidgets.QLabel('<b>Icon</b>: <i>srip</i> from <a href="https://www.flaticon.com/">www.flaticon.com</a>')
+        vbox.addWidget(lbl)
+        lbl = qtwidgets.QLabel('<b>Website</b>: <a href="https://github.com/eepp/yobr">github.com/eepp/yobr</a>')
+        vbox.addWidget(lbl)
+        vbox.addStretch()
+        hbox.addSpacing(10)
+        hbox.addLayout(vbox)
 
 
 # yobr's window
@@ -702,8 +747,7 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         self._installed_pbar = create_pbar(count, '%v/%m packages installed')
 
     def _set_icon(self):
-        icon_path = pkg_resources.resource_filename(__name__, 'icon.png')
-        self.setWindowIcon(qtgui.QIcon(icon_path))
+        self.setWindowIcon(qtgui.QIcon(_ICON_PATH))
 
     def _build_ui(self):
         # set window's title from application name
@@ -790,11 +834,12 @@ class _YoBrWindow(qtwidgets.QMainWindow):
                                                        interval))
             return action
 
-        def goto_website(url, checked):
-            webbrowser.open_new_tab(url)
-
         def show_legend_window(checked):
             dlg = _BuildStageLegendDialog(self)
+            dlg.exec()
+
+        def show_about_window(checked):
+            dlg = _AboutDialog(self)
             dlg.exec()
 
         # file menu
@@ -821,15 +866,11 @@ class _YoBrWindow(qtwidgets.QMainWindow):
 
         # help menu
         menu = self.menuBar().addMenu('&Help')
-        action = menu.addAction('Build stage &legend')
+        action = menu.addAction('Build stage &legend...')
         action.triggered.connect(show_legend_window)
         menu.addSeparator()
-        action = menu.addAction('Go to &project website')
-        f = functools.partial(goto_website, 'https://github.com/eepp/yobr/')
-        action.triggered.connect(f)
-        action = menu.addAction('Go to &Buildroot website')
-        f = functools.partial(goto_website, 'https://buildroot.org/')
-        action.triggered.connect(f)
+        action = menu.addAction('&About yobr...')
+        action.triggered.connect(show_about_window)
 
     # the "Refresh now" action
     @property
