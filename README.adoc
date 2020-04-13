@@ -72,7 +72,9 @@ Click **Help** and then **Build stage legend** to see the stage-colour
 mapping.
 
 * A tiny progress bar which shows how many of its _direct_ dependencies
-  (including itself) are currently built.
+  (including itself) are currently _built_.
++
+This progress bar is hidden as soon as the package is built.
 
 +
 Click a package build state to select it, showing its details on the

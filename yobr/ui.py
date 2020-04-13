@@ -226,19 +226,23 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._set_bg_lbl_stylesheet()
 
         # update progress bar
-        dep_built_count = 0
+        if stage in (yobr.br.PkgBuildStage.BUILT, yobr.br.PkgBuildStage.INSTALLED):
+            self._pbar.setVisible(False)
+        else:
+            dep_built_count = 0
 
-        for dep_pkg_info in self._pkg_build.info.dependencies:
-            dep_pkg_build = self._pkg_build_monitor.pkg_builds[dep_pkg_info.name]
+            for dep_pkg_info in self._pkg_build.info.dependencies:
+                dep_pkg_build = self._pkg_build_monitor.pkg_builds[dep_pkg_info.name]
 
-            if self._is_built(dep_pkg_build):
+                if self._is_built(dep_pkg_build):
+                    dep_built_count += 1
+
+            if self._is_built(self._pkg_build):
+                # this package build is part of its own dependencies
                 dep_built_count += 1
 
-        if self._is_built(self._pkg_build):
-            # this package build is part of its own dependencies
-            dep_built_count += 1
-
-        self._pbar.setValue(dep_built_count)
+            self._pbar.setValue(dep_built_count)
+            self._pbar.setVisible(True)
 
     def resizeEvent(self, event):
         res = super().resizeEvent(event)
