@@ -664,6 +664,29 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         self._details.pkg_build = pkg_build_state.pkg_build
         self._details_scroll_area.setVisible(True)
 
+    def _build_ui_progress_bars(self):
+        def create_pbar(max, fmt):
+            pbar = qtwidgets.QProgressBar()
+            pbar.setRange(0, max)
+            pbar.setFormat(fmt)
+            pbar.setValue(0)
+            pbar.setFixedHeight(16)
+            pbar.setStyleSheet('font-size: 10px; font-weight: bold;')
+            return pbar
+
+        # built
+        self._built_pbar = create_pbar(len(self._pkg_build_monitor.pkg_builds),
+                                       '%v/%m packages built')
+
+        # installed
+        count = 0
+
+        for pkg_build in self._pkg_build_monitor.pkg_builds.values():
+            if pkg_build.info.is_installable:
+                count += 1
+
+        self._installed_pbar = create_pbar(count, '%v/%m packages installed')
+
     def _build_ui(self):
         # set window's title from application name
         self.setWindowTitle(self._app.applicationName())
@@ -676,7 +699,9 @@ class _YoBrWindow(qtwidgets.QMainWindow):
 
         # build menu bar, progress (top), and package build state grid
         self._build_ui_menu_bar()
-        self._build_ui_progress(main_layout)
+        self._build_ui_progress_bars()
+        main_layout.addWidget(self._built_pbar)
+        main_layout.addWidget(self._installed_pbar)
         self._build_ui_pkg_build_state_grid()
 
         # wrap the grid within a scroll area
@@ -734,13 +759,6 @@ class _YoBrWindow(qtwidgets.QMainWindow):
 
         # initially invisible
         self._details_scroll_area.setVisible(False)
-
-    def _build_ui_progress(self, main_layout):
-        self._pbar = qtwidgets.QProgressBar()
-        self._pbar.setRange(0, len(self._pkg_build_monitor.pkg_builds))
-        self._pbar.setFormat('%v/%m packages built')
-        self._pbar.setValue(0)
-        main_layout.addWidget(self._pbar)
 
     def _build_ui_menu_bar(self):
         def add_refresh_interval_action(name, interval):
@@ -803,8 +821,11 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         status_text = now.strftime('Last update: %H:%M:%S')
         self._status_bar.showMessage(status_text)
 
-        # update top progress bar
-        self._pbar.setValue(self._pkg_build_monitor.built_count)
+        # update progress bar for built packages
+        self._built_pbar.setValue(self._pkg_build_monitor.built_count)
+
+        # update progress bar for installed packages
+        self._installed_pbar.setValue(self._pkg_build_monitor.installed_count)
 
         # update package build states
         self._pkg_build_state_grid.update_from_state()
