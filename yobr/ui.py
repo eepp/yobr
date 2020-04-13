@@ -218,14 +218,16 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._pbar.setValue(dep_built_count)
 
     def resizeEvent(self, event):
-        super().resizeEvent(event)
+        res = super().resizeEvent(event)
 
         # update floating background label's size to fill this widget
         # completely
         self._bg_lbl.setFixedSize(self.size())
+        return res
 
     def mouseReleaseEvent(self, event):
         self.clicked.emit()
+        return super().mouseReleaseEvent(event)
 
     # any part of this widget is clicked
     clicked = qtcore.pyqtSignal()
@@ -339,10 +341,11 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
             row_i += 1
 
     def resizeEvent(self, event):
-        super().resizeEvent(event)
+        res = super().resizeEvent(event)
 
         # reposition grid items
         self._pos_pkg_build_states()
+        return res
 
     def update_from_state(self):
         # update each package build state
@@ -582,10 +585,11 @@ class _BuildStageLegendDialog(qtwidgets.QDialog):
         self.setLayout(vbox)
 
     def showEvent(self, event):
-        super().showEvent(event)
+        res = super().showEvent(event)
 
         # adjust this dialog's size to content
         self.setFixedSize(self.sizeHint())
+        return res
 
 
 # yobr's window
