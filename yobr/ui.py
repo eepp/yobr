@@ -28,6 +28,7 @@ import logging
 import webbrowser
 import functools
 import datetime
+import signal
 import PyQt5 as qtwidgets
 import PyQt5.QtWidgets as qtwidgets
 import PyQt5.QtCore as qtcore
@@ -862,6 +863,13 @@ def _validate_args(args):
     os.path.isdir(args.br_root_dir)
 
 
+def _setup_signals():
+    def handler(signum, frame):
+        qtcore.QCoreApplication.quit()
+
+    signal.signal(signal.SIGINT, handler)
+
+
 def main():
     # refresh timer timeout
     def refresh_timer_timeout():
@@ -881,6 +889,9 @@ def main():
         app = qtwidgets.QApplication(sys.argv)
         app.setApplicationName('YO Buildroot!')
         app.setApplicationVersion(yobr.__version__)
+
+        # setup signals
+        _setup_signals()
 
         # parse and validate command-line arguments
         args = _parse_args(app)
