@@ -130,6 +130,14 @@ class _PkgBuildState(qtwidgets.QWidget):
         self.update_from_state()
 
     def _build_ui(self):
+        # whole widget's tooltip: name and version (if any)
+        tooltip = self._pkg_build.info.name
+
+        if self._pkg_build.info.version is not None:
+            tooltip += ' {}'.format(self._pkg_build.info.version)
+
+        self.setToolTip(tooltip)
+
         # background label (no text; just for the colour); assigning
         # this as its parent makes the label float under the other
         # widgets managed by this widget's layout
