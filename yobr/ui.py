@@ -921,7 +921,6 @@ def main():
 
     try:
         # create application
-        logger.info('Starting application (v{}).'.format(yobr.__version__))
         app = qtwidgets.QApplication(sys.argv)
         app.setApplicationName('YO Buildroot!')
         app.setApplicationVersion(yobr.__version__)
@@ -934,6 +933,7 @@ def main():
         _validate_args(args)
 
         # query Buildroot for package information
+        logger.info('Starting application (v{}).'.format(yobr.__version__))
         logger.info('Getting package information from `{}`.'.format(args.br_root_dir))
         pkg_build_monitor = yobr.br.pkg_build_monitor_from_make(args.br_root_dir,
                                                                 args.br_build_dir)
