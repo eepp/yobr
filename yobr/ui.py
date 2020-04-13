@@ -445,21 +445,36 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         vbox.addWidget(self._name_lbl)
         vbox.addSpacing(12)
 
-        # textual information
-        form = qtwidgets.QFormLayout()
-        form.setVerticalSpacing(2)
-        form.setHorizontalSpacing(16)
-        self._stage_lbl = create_mono_label(True)
-        form.addRow('Build stage:', self._stage_lbl)
-        self._version_lbl = create_mono_label()
-        form.addRow('Version:', self._version_lbl)
+        def create_base_form(stage_lbl_attr, version_lbl_attr, ):
+            form = qtwidgets.QFormLayout()
+            form.setContentsMargins(0, 0, 0, 0)
+            form.setVerticalSpacing(2)
+            form.setHorizontalSpacing(16)
+            lbl = create_mono_label(True)
+            setattr(self, stage_lbl_attr, lbl)
+            form.addRow('Build stage:', lbl)
+            lbl = create_mono_label()
+            setattr(self, version_lbl_attr, lbl)
+            form.addRow('Version:', lbl)
+            return form
+
+        # textual information (target)
+        form = create_base_form('_target_stage_lbl', '_target_version_lbl')
         self._install_target_lbl = create_mono_label()
         form.addRow('Install (target)?', self._install_target_lbl)
         self._install_staging_lbl = create_mono_label()
         form.addRow('Install (staging)?', self._install_staging_lbl)
         self._install_images_lbl = create_mono_label()
         form.addRow('Install (images)?', self._install_images_lbl)
-        vbox.addLayout(form)
+        self._target_info = qtwidgets.QWidget()
+        self._target_info.setLayout(form)
+        vbox.addWidget(self._target_info)
+
+        # textual information (host)
+        form = create_base_form('_host_stage_lbl', '_host_version_lbl')
+        self._host_info = qtwidgets.QWidget()
+        self._host_info.setLayout(form)
+        vbox.addWidget(self._host_info)
 
         # dependencies are within their own vertical box (empty for the
         # moment)
@@ -526,13 +541,10 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
     @pkg_build.setter
     def pkg_build(self, pkg_build):
         def update_bool_lbl(lbl, value):
-            if value is None:
-                text = '<i>N/A</i>'
+            if value:
+                text = 'Yes'
             else:
-                if value:
-                    text = 'Yes'
-                else:
-                    text = 'No'
+                text = 'No'
 
             lbl.setText(text)
 
@@ -540,24 +552,24 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         info = self._pkg_build.info
         self._name_lbl.setText(info.name)
 
+        if type(info) is yobr.br.TargetPkgInfo:
+            update_bool_lbl(self._install_target_lbl, info.install_target)
+            update_bool_lbl(self._install_staging_lbl, info.install_staging)
+            update_bool_lbl(self._install_images_lbl, info.install_images)
+            self._target_info.setVisible(True)
+            self._host_info.setVisible(False)
+            version_lbl = self._target_version_lbl
+        elif type(info) is yobr.br.HostPkgInfo:
+            self._host_info.setVisible(True)
+            self._target_info.setVisible(False)
+            version_lbl = self._host_version_lbl
+
         if info.version is not None:
             version = info.version
         else:
             version = '<i>N/A</i>'
 
-        self._version_lbl.setText(version)
-        install_target = None
-        install_staging = None
-        install_images = None
-
-        if type(info) is yobr.br.TargetPkgInfo:
-            install_target = info.install_target
-            install_staging = info.install_staging
-            install_images = info.install_images
-
-        update_bool_lbl(self._install_target_lbl, install_target)
-        update_bool_lbl(self._install_staging_lbl, install_staging)
-        update_bool_lbl(self._install_images_lbl, install_images)
+        version_lbl.setText(version)
 
         # reset dependency layout
         self._reset_deps()
@@ -579,8 +591,13 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
             return
 
         # update build stage
+        if type(self._pkg_build.info) is yobr.br.TargetPkgInfo:
+            stage_lbl = self._target_stage_lbl
+        elif type(self._pkg_build.info) is yobr.br.HostPkgInfo:
+            stage_lbl = self._host_stage_lbl
+
         stage = self._pkg_build_monitor.stage(self._pkg_build)
-        _set_build_stage_label(self._stage_lbl, stage)
+        _set_build_stage_label(stage_lbl, stage)
 
         # update dependency package build states
         self._update_deps_from_state()
