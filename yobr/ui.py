@@ -448,7 +448,8 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         vbox.addWidget(self._name_lbl)
         vbox.addSpacing(12)
 
-        def create_base_form(stage_lbl_attr, version_lbl_attr, ):
+        def create_base_form(stage_lbl_attr, version_lbl_attr,
+                             is_virtual_lbl_attr):
             form = qtwidgets.QFormLayout()
             form.setContentsMargins(0, 0, 0, 0)
             form.setVerticalSpacing(2)
@@ -459,10 +460,14 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
             lbl = create_mono_label()
             setattr(self, version_lbl_attr, lbl)
             form.addRow('Version:', lbl)
+            lbl = create_mono_label()
+            setattr(self, is_virtual_lbl_attr, lbl)
+            form.addRow('Virtual?', lbl)
             return form
 
         # textual information (target)
-        form = create_base_form('_target_stage_lbl', '_target_version_lbl')
+        form = create_base_form('_target_stage_lbl', '_target_version_lbl',
+                                '_target_virtual_lbl')
         self._install_target_lbl = create_mono_label()
         form.addRow('Install (target)?', self._install_target_lbl)
         self._install_staging_lbl = create_mono_label()
@@ -474,7 +479,8 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         vbox.addWidget(self._target_info)
 
         # textual information (host)
-        form = create_base_form('_host_stage_lbl', '_host_version_lbl')
+        form = create_base_form('_host_stage_lbl', '_host_version_lbl',
+                                '_host_virtual_lbl')
         self._host_info = qtwidgets.QWidget()
         self._host_info.setLayout(form)
         vbox.addWidget(self._host_info)
@@ -562,10 +568,12 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
             self._target_info.setVisible(True)
             self._host_info.setVisible(False)
             version_lbl = self._target_version_lbl
+            virtual_lbl = self._target_virtual_lbl
         elif type(info) is yobr.br.HostPkgInfo:
             self._host_info.setVisible(True)
             self._target_info.setVisible(False)
             version_lbl = self._host_version_lbl
+            virtual_lbl = self._host_virtual_lbl
 
         if info.version is not None:
             version = info.version
@@ -573,6 +581,7 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
             version = '<i>N/A</i>'
 
         version_lbl.setText(version)
+        update_bool_lbl(virtual_lbl, info.is_virtual)
 
         # reset dependency layout
         self._reset_deps()
