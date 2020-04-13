@@ -64,7 +64,7 @@ class _MinimalistProgressBar(qtwidgets.QProgressBar):
         stylesheet = '''
             QProgressBar:horizontal {{
                 border: 1px solid {fg};
-                border-radius: 0;
+                border-radius: 2px;
                 padding: 0;
                 background-color: {bg};
             }}
