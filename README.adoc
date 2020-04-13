@@ -2,6 +2,9 @@
 
 = YO Buildroot!
 Philippe Proulx <https://eepp.ca/>
+:toc:
+
+image:https://img.shields.io/pypi/v/yobr.svg?label=Latest%20version[link="https://pypi.python.org/pypi/yobr"]
 
 YO Buildroot, what's up?
 
