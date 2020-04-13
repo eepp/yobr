@@ -249,7 +249,9 @@ class _PkgBuildState(qtwidgets.QWidget):
         return res
 
     def mouseReleaseEvent(self, event):
-        self.clicked.emit()
+        if event.button() == qtcore.Qt.LeftButton:
+            self.clicked.emit()
+
         return super().mouseReleaseEvent(event)
 
     def enterEvent(self, event):
