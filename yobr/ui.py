@@ -105,6 +105,7 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._pkg_build = pkg_build
         self._pkg_build_monitor = pkg_build_monitor
         self._is_selected = False
+        self._is_hovered = False
         self._build_ui()
         self.update_from_state()
 
@@ -187,28 +188,41 @@ class _PkgBuildState(qtwidgets.QWidget):
         stage = self._pkg_build_monitor.stage(pkg_build)
         return stage in (yobr.br.PkgBuildStage.BUILT, yobr.br.PkgBuildStage.INSTALLED)
 
+    def _set_bg_lbl_stylesheet(self):
+        # get build stage colour
+        stage = self._pkg_build_monitor.stage(self._pkg_build)
+        colour = _BUILD_STAGE_COLORS_BG[stage]
+        stylesheet = 'border-radius: 2px;'
+
+        if self._is_selected:
+            stylesheet += 'background-color: rgba(0, 0, 0, .95);'
+        else:
+
+            if self._is_hovered:
+                stylesheet += 'border: 1px solid rgba(0, 0, 0, .8);'
+                stylesheet += 'background-color: #f0f0f0;'
+            else:
+                stylesheet += 'background-color: {};'.format(colour)
+
+        self._bg_lbl.setStyleSheet(stylesheet)
+
     def update_from_state(self):
         # get build stage colour
         stage = self._pkg_build_monitor.stage(self._pkg_build)
         colour = _BUILD_STAGE_COLORS_BG[stage]
 
-        # background label's style sheet
-        bg_stylesheet = 'border-radius: 2px;'
-
         if self._is_selected:
             # selected: background is black, name has the build stage
             # colour
             name_stylesheet = 'color: {};'.format(colour)
-            bg_stylesheet += 'background-color: rgba(0, 0, 0, .95);'
         else:
             # not selected: background has the build stage colour, name
             # is black
             name_stylesheet = 'color: rgba(0, 0, 0, .9)'
-            bg_stylesheet += 'background-color: {};'.format(colour)
 
         # set label style sheets
-        self._bg_lbl.setStyleSheet(bg_stylesheet)
         self._name_lbl.setStyleSheet(name_stylesheet)
+        self._set_bg_lbl_stylesheet()
 
         # update progress bar
         dep_built_count = 0
@@ -236,6 +250,16 @@ class _PkgBuildState(qtwidgets.QWidget):
     def mouseReleaseEvent(self, event):
         self.clicked.emit()
         return super().mouseReleaseEvent(event)
+
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self._set_bg_lbl_stylesheet()
+        return super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        self._set_bg_lbl_stylesheet()
+        return super().leaveEvent(event)
 
     # any part of this widget is clicked
     clicked = qtcore.pyqtSignal()
