@@ -663,6 +663,7 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         scroll_area = qtwidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self._pkg_build_state_grid)
+        scroll_area.setMinimumWidth(300)
 
         # center of the window is the grid on the left and, possibly,
         # the details on the right
