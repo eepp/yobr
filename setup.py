@@ -33,7 +33,7 @@ if sys.version_info.major < 3:
 
 
 setup(name='yobr',
-      version='0.1',
+      version='0.2.0',
       description='Graphical Buildroot build monitor',
       author='Philippe Proulx',
       author_email='eeppeliteloop@gmail.com',
