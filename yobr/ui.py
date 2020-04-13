@@ -313,8 +313,9 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
         items_per_row = content_width // (self._min_item_width + self._spacing)
 
         if items_per_row == 0:
-            # unlikely, but let's not divide by zero
-            return
+            # content width is less than the minimum width of an item:
+            # use a single item
+            items_per_row = 1
 
         # number of rows
         rows = math.ceil(len(self._pkg_build_states) / items_per_row)
