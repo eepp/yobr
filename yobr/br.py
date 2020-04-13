@@ -349,6 +349,17 @@ class PkgBuildMonitor:
 
         return count
 
+    # cached count of installed packages
+    @property
+    def installed_count(self):
+        count = 0
+
+        for pkg_build in self._pkg_builds.values():
+            if self.stage(pkg_build) == PkgBuildStage.INSTALLED:
+                count += 1
+
+        return count
+
 
 # creates a package build monitor, running `make` to get the configured
 # package information
