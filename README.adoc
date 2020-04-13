@@ -53,8 +53,9 @@ to get information about the configured packages.
 
 Once started, what you see is:
 
-Global build status progress bar (top)::
-    The current number of _built_ packages (target and host).
+Global build and installed status progress bar (top)::
+    The current number of _built_ and _installed_ packages (target and
+    host).
 
 Package build states::
     The individual build states of each package.
