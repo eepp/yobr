@@ -872,7 +872,7 @@ class _Args:
 # parses the command-line arguments for the application `app`
 def _parse_args(app):
     parser = qtcore.QCommandLineParser()
-    parser.setApplicationDescription('Graphical Buildroot build monitor')
+    parser.setApplicationDescription(yobr.__description__)
     parser.addHelpOption()
     parser.addVersionOption()
     parser.addPositionalArgument('BR-ROOT-DIR', 'Buildroot root directory')

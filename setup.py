@@ -23,6 +23,7 @@
 
 
 import sys
+import yobr
 from setuptools import setup
 
 
@@ -33,8 +34,8 @@ if sys.version_info.major < 3:
 
 
 setup(name='yobr',
-      version='0.2.1',
-      description='Graphical Buildroot build monitor',
+      version=yobr.__version__,
+      description=yobr.__description__,
       author='Philippe Proulx',
       author_email='eeppeliteloop@gmail.com',
       url='https://github.com/eepp/yobr',
