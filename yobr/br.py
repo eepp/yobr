@@ -86,7 +86,7 @@ class TargetPkgInfo(PkgInfo):
 
     @property
     def is_installable(self):
-        return self._install_target
+        return any((self._install_target, self._install_staging, self._install_images))
 
     @property
     def type_name(self):
@@ -269,7 +269,20 @@ class PkgBuild:
 
     @property
     def is_installed(self):
-        return self.has_stamp('{}_installed'.format(self._info.type_name))
+        if type(self._info) is TargetPkgInfo:
+            if self._info.install_target and self.has_stamp('target_installed'):
+                return True
+
+            if self._info.install_staging and self.has_stamp('staging_installed'):
+                return True
+
+            if self._info.install_images and self.has_stamp('images_installed'):
+                return True
+        elif type(self._info) is HostPkgInfo:
+            if self.has_stamp('host_installed'):
+                return True
+
+        return False
 
     # current (latest) build stage for this package build
     @property
