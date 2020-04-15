@@ -15,11 +15,8 @@ image::screenshots/yobr.png[yobr window]
 
 == Installation
 
-. Make sure you have Python{nbsp}3 and
-  Qt{nbsp}5 (_core_, _gui_, and _widgets_ modules)
+Install yobr from https://pypi.org/[PyPI]:
 
-. Install yobr from https://pypi.org/[PyPI]:
-+
 ----
 $ sudo pip3 install yobr
 ----
