@@ -21,16 +21,8 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-import sys
 import yobr
 from setuptools import setup
-
-
-# make sure we run Python 3+ here
-if sys.version_info.major < 3:
-    sys.stderr.write('Sorry, yobr needs Python 3\n')
-    sys.exit(1)
 
 
 setup(name='yobr',
@@ -44,6 +36,7 @@ setup(name='yobr',
           'yobr': ['*.png']
       },
       install_requires=['setuptools', 'PyQt5'],
+      python_requires='>=3.4',
       entry_points={
           'gui_scripts': [
               'yobr = yobr.ui:main',
