@@ -86,6 +86,9 @@ dependencies and dependants.
 +
 Click a dependency package build state to select it globally.
 
+Press **Ctrl**+**F** to select a package build state with a globbing
+pattern. For example, `ho*cur*` selects `host-ncurses`.
+
 yobr periodically (every two seconds by default) checks the existence of
 package build stamp files to update its window. Click **State** to
 change the refresh rate. The status bar shows the last update time.

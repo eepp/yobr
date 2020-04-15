@@ -29,6 +29,7 @@ import logging
 import functools
 import datetime
 import signal
+import fnmatch
 import pkg_resources
 import PyQt5 as qtwidgets
 import PyQt5.QtWidgets as qtwidgets
@@ -723,6 +724,31 @@ class _AboutDialog(_AutoAdjustDialog):
         hbox.addLayout(vbox)
 
 
+# the find package dialog
+class _FindPkgBuildDialog(_AutoAdjustDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Find package build')
+        self.setModal(True)
+        self.setSizeGripEnabled(False)
+        self._build_ui()
+
+    def _build_ui(self):
+        hbox = qtwidgets.QHBoxLayout()
+        hbox.addWidget(qtwidgets.QLabel('Find package build:'))
+        self._edit = qtwidgets.QLineEdit()
+        self._edit.setFont(_MONO_FONT_BOLD)
+        self._edit.setPlaceholderText('Globbing pattern')
+        self._edit.setFixedWidth(300)
+        self._edit.returnPressed.connect(self.accept)
+        hbox.addWidget(self._edit)
+        self.setLayout(hbox)
+
+    @property
+    def pattern(self):
+        return self._edit.text()
+
+
 # yobr's window
 class _YoBrWindow(qtwidgets.QMainWindow):
     def __init__(self, app, pkg_build_monitor):
@@ -863,6 +889,21 @@ class _YoBrWindow(qtwidgets.QMainWindow):
             dlg = _AboutDialog(self)
             dlg.exec()
 
+        def find_package(checked):
+            dlg = _FindPkgBuildDialog(self)
+
+            if dlg.exec() != qtwidgets.QDialog.Accepted:
+                return
+
+            pattern = dlg.pattern.strip()
+            self._logger.debug('Searching for package build `{}`.'.format(pattern))
+
+            for pkg_build in sorted(self._pkg_build_monitor.pkg_builds.values(),
+                                    key=lambda pb: pb.info.name):
+                if fnmatch.fnmatch(pkg_build.info.name, pattern):
+                    self._pkg_build_state_grid.selected_pkg_build = pkg_build
+                    break
+
         # file menu
         menu = self.menuBar().addMenu('&File')
         action = menu.addAction('&Quit')
@@ -885,6 +926,12 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         action = add_refresh_interval_action('ten seconds', 10000)
         action = add_refresh_interval_action('30 seconds', 30000)
         action = add_refresh_interval_action('minute', 60000)
+
+        # find menu
+        menu = self.menuBar().addMenu('&Find')
+        action = menu.addAction('Find &package build...')
+        action.setShortcut(qtgui.QKeySequence.Find)
+        action.triggered.connect(find_package)
 
         # help menu
         menu = self.menuBar().addMenu('&Help')
