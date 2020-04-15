@@ -105,10 +105,11 @@ class _PkgBuildState(qtwidgets.QWidget):
         super().__init__()
         self._pkg_build = pkg_build
         self._pkg_build_monitor = pkg_build_monitor
+        self._pkg_build_monitor.updated.connect(self._update)
         self._is_selected = False
         self._is_hovered = False
         self._build_ui()
-        self.update_from_state()
+        self._update()
 
     # the monitored package build object
     @property
@@ -129,7 +130,7 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._pbar.is_reversed = is_selected
 
         # update widget properties now that this is marked as selected
-        self.update_from_state()
+        self._update()
 
     def _build_ui(self):
         # whole widget's tooltip: name and version (if any)
@@ -207,7 +208,7 @@ class _PkgBuildState(qtwidgets.QWidget):
 
         self._bg_lbl.setStyleSheet(stylesheet)
 
-    def update_from_state(self):
+    def _update(self):
         # get build stage colour
         stage = self._pkg_build_monitor.stage(self._pkg_build)
         colour = _BUILD_STAGE_COLORS_BG[stage]
@@ -386,11 +387,6 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
         # reposition grid items
         self._pos_pkg_build_states()
         return res
-
-    def update_from_state(self):
-        # update each package build state
-        for pkg_build_state in self._pkg_build_states:
-            pkg_build_state.update_from_state()
 
     # the currently selected package build, if any
     @property
@@ -590,18 +586,10 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         # reset dependency layout
         self._reset_deps()
 
-        # update UI from state
-        self.update_from_state()
+        # update UI
+        self._update()
 
-    def _update_deps_from_state(self):
-        for i in range(self._dep_vbox.count()):
-            item = self._dep_vbox.itemAt(i)
-            widget = item.widget()
-
-            if type(widget) is _PkgBuildState:
-                widget.update_from_state()
-
-    def update_from_state(self):
+    def _update(self):
         if self._pkg_build is None:
             # nothing to show
             return
@@ -614,9 +602,6 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
 
         stage = self._pkg_build_monitor.stage(self._pkg_build)
         _set_build_stage_label(stage_lbl, stage)
-
-        # update dependency package build states
-        self._update_deps_from_state()
 
 
 class _AutoAdjustDialog(qtwidgets.QDialog):
@@ -710,8 +695,8 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         super().__init__()
         self._app = app
         self._pkg_build_monitor = pkg_build_monitor
+        self._pkg_build_monitor.updated.connect(self._update)
         self._build_ui()
-        self.update_from_state()
 
     def _no_pkg_build_state_selected(self):
         # no selected package build state: hide details pane
@@ -877,7 +862,7 @@ class _YoBrWindow(qtwidgets.QMainWindow):
     def refresh_action(self):
         return self._refresh_action
 
-    def update_from_state(self):
+    def _update(self):
         # update status bar with the last refresh time
         now = datetime.datetime.now()
         status_text = now.strftime('Last update: %H:%M:%S')
@@ -889,11 +874,33 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         # update progress bar for installed packages
         self._installed_pbar.setValue(self._pkg_build_monitor.installed_count)
 
-        # update package build states
-        self._pkg_build_state_grid.update_from_state()
 
-        # update package build state details
-        self._details.update_from_state()
+class _PkgBuildMonitor(qtcore.QObject):
+    def __init__(self, pkg_builds):
+        super().__init__()
+        self._br_pkg_build_monitor = yobr.br.PkgBuildMonitor(pkg_builds)
+
+    @property
+    def pkg_builds(self):
+        return self._br_pkg_build_monitor.pkg_builds
+
+    def stage(self, pkg_build):
+        return self._br_pkg_build_monitor.stage(pkg_build)
+
+    updated = qtcore.pyqtSignal()
+
+    def update(self):
+        res = self._br_pkg_build_monitor.update()
+        self.updated.emit()
+        return res
+
+    @property
+    def built_count(self):
+        return self._br_pkg_build_monitor.built_count
+
+    @property
+    def installed_count(self):
+        return self._br_pkg_build_monitor.installed_count
 
 
 # prints an error message to the standard error
@@ -960,8 +967,6 @@ def main():
     def refresh_timer_timeout():
         logger.info('Updating package build monitor.')
         pkg_build_monitor.update()
-        logger.info('Updating UI.')
-        w.update_from_state()
 
     # some logging
     logging.basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s')
@@ -984,15 +989,14 @@ def main():
         # query Buildroot for package information
         logger.info('Starting application (v{}).'.format(yobr.__version__))
         logger.info('Getting package information from `{}`.'.format(args.br_root_dir))
-        pkg_build_monitor = yobr.br.pkg_build_monitor_from_make(args.br_root_dir,
-                                                                args.br_build_dir)
+        pkg_builds = yobr.br.pkg_builds_from_make(args.br_root_dir,
+                                                  args.br_build_dir)
+        pkg_build_monitor = _PkgBuildMonitor(pkg_builds)
 
         if len(pkg_build_monitor.pkg_builds) == 0:
             # weird
             raise RuntimeError('No packages found!')
 
-        # update package monitor now
-        pkg_build_monitor.update()
         logger.info('Watching {} packages:'.format(len(pkg_build_monitor.pkg_builds)))
 
         for pkg_build in sorted(pkg_build_monitor.pkg_builds.values(), key=lambda pb: pb.build_dir):
@@ -1016,6 +1020,9 @@ def main():
 
         # start timer
         timer.start()
+
+        # initial update
+        pkg_build_monitor.update()
 
         # show window
         w.show()
