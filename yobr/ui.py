@@ -428,8 +428,22 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
     def __init__(self, pkg_build_monitor):
         super().__init__()
         self._pkg_build_monitor = pkg_build_monitor
+        self._pkg_build_monitor.updated.connect(self._update)
         self._pkg_build = None
+        self._set_dependants()
         self._build_ui()
+
+    def _set_dependants(self):
+        self._dependants = {}
+
+        for pkg_build in self._pkg_build_monitor.pkg_builds.values():
+            dependants = set()
+
+            for oth_pkg_build in self._pkg_build_monitor.pkg_builds.values():
+                if pkg_build.info in oth_pkg_build.info.dependencies:
+                    dependants.add(oth_pkg_build.info)
+
+            self._dependants[pkg_build.info.name] = dependants
 
     def _build_ui(self):
         def create_mono_label(is_bold=False):
@@ -485,10 +499,13 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         self._host_info.setLayout(form)
         vbox.addWidget(self._host_info)
 
-        # dependencies are within their own vertical box (empty for the
-        # moment)
-        self._dep_vbox = qtwidgets.QVBoxLayout()
-        vbox.addLayout(self._dep_vbox)
+        # dependencies and dependants are within their own vertical box
+        # (empty for the moment)
+        self._dependencies_vbox = qtwidgets.QVBoxLayout()
+        vbox.addLayout(self._dependencies_vbox)
+        self._dependants_vbox = qtwidgets.QVBoxLayout()
+        vbox.addLayout(self._dependants_vbox)
+
         vbox.addStretch()
 
         # set main vertical box as this widget's layout
@@ -500,19 +517,18 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
     def _pkg_build_state_clicked(self):
         self.pkg_build_state_clicked.emit(self.sender())
 
-    # resets the dependency package build states; clears their vertical
-    # box layout and creates new one for the dependencies of
-    # `self._pkg_build.info`
-    def _reset_deps(self):
+    # resets package build states with vertical box `vbox`; clears the
+    # layout and creates new one for the items of `pkg_infos` (set)
+    def _reset_pkg_build_states(self, vbox, name, pkg_infos):
         # get vertical box layout's current items
         items = []
 
-        for i in range(self._dep_vbox.count()):
-            items.append(self._dep_vbox.itemAt(i))
+        for i in range(vbox.count()):
+            items.append(vbox.itemAt(i))
 
         # remove items
         for item in items:
-            self._dep_vbox.removeItem(item)
+            vbox.removeItem(item)
 
             # we own `item` now: delete it later
             if item.layout() is not None:
@@ -521,26 +537,22 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
             if item.widget() is not None:
                 item.widget().deleteLater()
 
-        dep_pkg_infos = self._pkg_build.info.dependencies
-
-        if len(dep_pkg_infos) == 0:
+        if len(pkg_infos) == 0:
             # nothing to show
             return
 
         # title
-        self._dep_vbox.addSpacing(12)
-        text = 'Direct dependencies ({}):'.format(len(dep_pkg_infos))
-        self._dep_vbox.addWidget(qtwidgets.QLabel(text))
+        vbox.addSpacing(12)
+        text = '{} ({}):'.format(name, len(pkg_infos))
+        vbox.addWidget(qtwidgets.QLabel(text))
 
         # create one package build state for each dependency (sorted by
         # name)
-        for pkg_info in sorted(dep_pkg_infos, key=lambda pi: pi.name):
+        for pkg_info in sorted(list(pkg_infos), key=lambda pi: pi.name):
             pkg_build = self._pkg_build_monitor.pkg_builds[pkg_info.name]
             pkg_build_state = _PkgBuildState(pkg_build, self._pkg_build_monitor)
             pkg_build_state.clicked.connect(self._pkg_build_state_clicked)
-            self._dep_vbox.addWidget(pkg_build_state)
-
-        self._dep_vbox.addStretch()
+            vbox.addWidget(pkg_build_state)
 
     # package build which this widget explains
     @property
@@ -583,8 +595,12 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         version_lbl.setText(version)
         update_bool_lbl(virtual_lbl, info.is_virtual)
 
-        # reset dependency layout
-        self._reset_deps()
+        # reset dependency and dependant package build states
+        self._reset_pkg_build_states(self._dependencies_vbox,
+                                     'Direct dependencies',
+                                     pkg_build.info.dependencies)
+        self._reset_pkg_build_states(self._dependants_vbox, 'Direct dependants',
+                                     self._dependants[pkg_build.info.name])
 
         # update UI
         self._update()

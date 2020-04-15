@@ -61,6 +61,15 @@ class PkgInfo:
     def dependencies(self):
         return self._dependencies
 
+    def __hash__(self):
+        return hash(self._name)
+
+    def __eq__(self, other):
+        if type(other) is not type(self):
+            return False
+
+        return self._name == other._name
+
 
 # target package information
 class TargetPkgInfo(PkgInfo):
@@ -144,9 +153,9 @@ def pkg_info_from_br_pkg_info(br_pkg_info, name):
                                                 bool, default=False)
         return TargetPkgInfo(name, is_virtual, version, licenses, dl_dir,
                              install_target, install_staging, install_images,
-                             [])
+                             set())
     elif type_str == 'host':
-        return HostPkgInfo(name, is_virtual, version, licenses, dl_dir, [])
+        return HostPkgInfo(name, is_virtual, version, licenses, dl_dir, set())
     else:
         raise ValueError('unknown `type` entry value: `{}`'.format(type_str))
 
@@ -183,7 +192,7 @@ def pkg_infos_from_br_info(br_info):
                 # we don't have a package information for this dependency
                 continue
 
-            pkg_info.dependencies.append(pkg_infos[dep_name])
+            pkg_info.dependencies.add(pkg_infos[dep_name])
 
     return pkg_infos
 
@@ -301,6 +310,15 @@ class PkgBuild:
             return PkgBuildStage.DOWNLOADED
 
         return PkgBuildStage.UNKNOWN
+
+    def __hash__(self):
+        return hash(self._info)
+
+    def __eq__(self, other):
+        if type(other) is not type(self):
+            return False
+
+        return self._info == other._info
 
 
 # creates a dictionary of package names to package build objects,

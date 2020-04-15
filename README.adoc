@@ -84,8 +84,8 @@ Package build state details (right)::
     The details of a given package build state (when you select it).
 +
 The details include the selected package build state's build stage, its
-version, and a list of package build states for each of its _direct_
-dependencies.
+version, and lists of package build states for each of its _direct_
+dependencies and dependants.
 +
 Click a dependency package build state to select it globally.
 
