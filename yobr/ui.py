@@ -202,7 +202,7 @@ class _PkgBuildState(qtwidgets.QWidget):
 
             if self._is_hovered:
                 stylesheet += 'border: 1px solid rgba(0, 0, 0, .8);'
-                stylesheet += 'background-color: #f0f0f0;'
+                stylesheet += 'background-color: #fcfcfc;'
             else:
                 stylesheet += 'background-color: {};'.format(colour)
 
