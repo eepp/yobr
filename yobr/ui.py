@@ -36,10 +36,10 @@ import PyQt5.QtGui as qtgui
 
 
 # common fonts
-_mono_font_family = 'DejaVu Sans Mono, Bitstream Vera Sans Mono, monospace'
-_mono_font = qtgui.QFont(_mono_font_family, 10)
-_mono_font_bold = qtgui.QFont(_mono_font_family, 10)
-_mono_font_bold.setBold(True)
+_MONO_FONT_FAMILY = 'DejaVu Sans Mono, Bitstream Vera Sans Mono, monospace'
+_MONO_FONT = qtgui.QFont(_MONO_FONT_FAMILY, 10)
+_MONO_FONT_BOLD = qtgui.QFont(_MONO_FONT_FAMILY, 10)
+_MONO_FONT_BOLD.setBold(True)
 
 
 # a minimalist progress bar (two colors, thin border)
@@ -157,7 +157,7 @@ class _PkgBuildState(qtwidgets.QWidget):
 
         # name label
         self._name_lbl = qtwidgets.QLabel(self._pkg_build.info.name)
-        self._name_lbl.setFont(_mono_font_bold)
+        self._name_lbl.setFont(_MONO_FONT_BOLD)
         hbox.addWidget(self._name_lbl)
         hbox.addStretch()
 
@@ -438,7 +438,7 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
     def _build_ui(self):
         def create_mono_label(is_bold=False):
             lbl = qtwidgets.QLabel()
-            lbl.setFont(_mono_font_bold if is_bold else _mono_font)
+            lbl.setFont(_MONO_FONT_BOLD if is_bold else _MONO_FONT)
             return lbl
 
         # main layout is a vertical box
@@ -643,7 +643,7 @@ class _BuildStageLegendDialog(_AutoAdjustDialog):
     def _build_ui(self):
         def add_label(stage):
             lbl = qtwidgets.QLabel()
-            font = qtgui.QFont(_mono_font_bold)
+            font = qtgui.QFont(_MONO_FONT_BOLD)
             font.setPointSize(16)
             lbl.setFont(font)
             _set_build_stage_label(lbl, stage, _BUILD_STAGE_COLORS_BG)
