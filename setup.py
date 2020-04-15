@@ -28,6 +28,7 @@ from setuptools import setup
 setup(name='yobr',
       version=yobr.__version__,
       description=yobr.__description__,
+      keywords='buildroot build monitor build-monitor gui',
       author='Philippe Proulx',
       author_email='eeppeliteloop@gmail.com',
       url='https://github.com/eepp/yobr',
