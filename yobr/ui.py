@@ -866,6 +866,7 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         # file menu
         menu = self.menuBar().addMenu('&File')
         action = menu.addAction('&Quit')
+        action.setShortcut(qtgui.QKeySequence.Quit)
         action.triggered.connect(self._app.quit)
 
         # state menu
