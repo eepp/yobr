@@ -21,6 +21,7 @@
 
 import yobr
 import yobr.br
+import yobr.utils
 import sys
 import math
 import os.path
@@ -106,6 +107,8 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._pkg_build = pkg_build
         self._pkg_build_monitor = pkg_build_monitor
         self._pkg_build_monitor.updated.connect(self._update)
+        self._logger = yobr.utils._get_obj_logger(self, pkg_build.info.name)
+        self._logger.debug('Creating.')
         self._is_selected = False
         self._is_hovered = False
         self._build_ui()
@@ -123,6 +126,7 @@ class _PkgBuildState(qtwidgets.QWidget):
 
     @is_selected.setter
     def is_selected(self, is_selected):
+        self._logger.debug('Selected: {}.'.format(is_selected))
         self._is_selected = is_selected
 
         # reverse the progress bar's colours as this widget's background
@@ -209,6 +213,8 @@ class _PkgBuildState(qtwidgets.QWidget):
         self._bg_lbl.setStyleSheet(stylesheet)
 
     def _update(self):
+        self._logger.debug('Updating.')
+
         # get build stage colour
         stage = self._pkg_build_monitor.stage(self._pkg_build)
         colour = _BUILD_STAGE_COLORS_BG[stage]
@@ -246,6 +252,7 @@ class _PkgBuildState(qtwidgets.QWidget):
             self._pbar.setVisible(True)
 
     def resizeEvent(self, event):
+        self._logger.debug('Resized: {}×{}'.format(self.width(), self.height()))
         res = super().resizeEvent(event)
 
         # update floating background label's size to fill this widget
@@ -255,6 +262,7 @@ class _PkgBuildState(qtwidgets.QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == qtcore.Qt.LeftButton:
+            self._logger.debug('Clicked.')
             self.clicked.emit()
 
         return super().mouseReleaseEvent(event)
@@ -278,6 +286,8 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
     def __init__(self, pkg_build_monitor):
         super().__init__()
         self._pkg_build_monitor = pkg_build_monitor
+        self._logger = yobr.utils._get_obj_logger(self)
+        self._logger.debug('Creating.')
 
         # this seems reasonable for most Buildroot package names
         self._min_item_width = 200
@@ -382,6 +392,7 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
             row_i += 1
 
     def resizeEvent(self, event):
+        self._logger.debug('Resized: {}×{}'.format(self.width(), self.height()))
         res = super().resizeEvent(event)
 
         # reposition grid items
@@ -398,6 +409,8 @@ class _PkgBuildStateGrid(qtwidgets.QWidget):
 
     @selected_pkg_build.setter
     def selected_pkg_build(self, pkg_build):
+        self._logger.debug('Selecting package build state `{}`.'.format(pkg_build.info.name))
+
         # find corresponding package build state
         for pkg_build_state in self._pkg_build_states:
             if pkg_build_state.pkg_build is pkg_build:
@@ -428,6 +441,8 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
     def __init__(self, pkg_build_monitor):
         super().__init__()
         self._pkg_build_monitor = pkg_build_monitor
+        self._logger = yobr.utils._get_obj_logger(self)
+        self._logger.debug('Creating.')
         self._pkg_build_monitor.updated.connect(self._update)
         self._pkg_build = None
         self._set_dependants()
@@ -569,6 +584,7 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
 
             lbl.setText(text)
 
+        self._logger.debug('Updating details for `{}`.'.format(pkg_build.info.name))
         self._pkg_build = pkg_build
         info = self._pkg_build.info
         self._name_lbl.setText(info.name)
@@ -609,6 +625,8 @@ class _PkgBuildStateDetails(qtwidgets.QWidget):
         if self._pkg_build is None:
             # nothing to show
             return
+
+        self._logger.debug('Updating.')
 
         # update build stage
         if type(self._pkg_build.info) is yobr.br.TargetPkgInfo:
@@ -712,6 +730,8 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         self._app = app
         self._pkg_build_monitor = pkg_build_monitor
         self._pkg_build_monitor.updated.connect(self._update)
+        self._logger = yobr.utils._get_obj_logger(self)
+        self._logger.debug('Creating.')
         self._build_ui()
 
     def _no_pkg_build_state_selected(self):
@@ -879,6 +899,8 @@ class _YoBrWindow(qtwidgets.QMainWindow):
         return self._refresh_action
 
     def _update(self):
+        self._logger.debug('Updating.')
+
         # update status bar with the last refresh time
         now = datetime.datetime.now()
         status_text = now.strftime('Last update: %H:%M:%S')
@@ -894,6 +916,8 @@ class _YoBrWindow(qtwidgets.QMainWindow):
 class _PkgBuildMonitor(qtcore.QObject):
     def __init__(self, pkg_builds):
         super().__init__()
+        self._logger = yobr.utils._get_obj_logger(self)
+        self._logger.debug('Creating.')
         self._br_pkg_build_monitor = yobr.br.PkgBuildMonitor(pkg_builds)
 
     @property
@@ -906,6 +930,7 @@ class _PkgBuildMonitor(qtcore.QObject):
     updated = qtcore.pyqtSignal()
 
     def update(self):
+        self._logger.debug('Updating.')
         res = self._br_pkg_build_monitor.update()
         self.updated.emit()
         return res
@@ -926,9 +951,10 @@ def _perror(msg):
 
 # program's arguments
 class _Args:
-    def __init__(self, br_root_dir, br_build_dir):
+    def __init__(self, br_root_dir, br_build_dir, log_lvl):
         self._br_root_dir = br_root_dir
         self._br_build_dir = br_build_dir
+        self._log_level = getattr(logging, log_lvl.upper())
 
     # Buildroot root directory
     @property
@@ -940,12 +966,20 @@ class _Args:
     def br_build_dir(self):
         return self._br_build_dir
 
+    # global log level
+    @property
+    def log_level(self):
+        return self._log_level
+
 
 # parses the command-line arguments for the application `app`
 def _parse_args(app):
     parser = qtcore.QCommandLineParser()
     parser.setApplicationDescription(yobr.__description__)
     parser.addHelpOption()
+    log_lvl_opt = qtcore.QCommandLineOption('log-level', 'Log level', 'LVL',
+                                            'INFO')
+    parser.addOption(log_lvl_opt)
     parser.addVersionOption()
     parser.addPositionalArgument('BR-ROOT-DIR', 'Buildroot root directory')
     parser.addPositionalArgument('BR-BUILD-DIR',
@@ -963,7 +997,7 @@ def _parse_args(app):
         # default to `BR-ROOT-DIR/output/build`
         br_build_dir = os.path.join(pos_args[0], 'output', 'build')
 
-    return _Args(pos_args[0], br_build_dir)
+    return _Args(pos_args[0], br_build_dir, parser.value(log_lvl_opt))
 
 
 def _validate_args(args):
@@ -984,11 +1018,6 @@ def main():
         logger.info('Updating package build monitor.')
         pkg_build_monitor.update()
 
-    # some logging
-    logging.basicConfig(format='[%(levelname)s] %(asctime)s: %(message)s')
-    logger = logging.getLogger('main')
-    logger.setLevel(logging.INFO)
-
     try:
         # create application
         app = qtwidgets.QApplication(sys.argv)
@@ -1001,6 +1030,11 @@ def main():
         # parse and validate command-line arguments
         args = _parse_args(app)
         _validate_args(args)
+
+        # configure logging
+        logging.basicConfig(level=args.log_level, style='{',
+                            format='{asctime} [{name}] {{{levelname}}}: {message}')
+        logger = logging.getLogger('main')
 
         # query Buildroot for package information
         logger.info('Starting application (v{}).'.format(yobr.__version__))

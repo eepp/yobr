@@ -24,6 +24,11 @@ import json
 import os
 import os.path
 import subprocess
+import logging
+import yobr.utils
+
+
+_logger = logging.getLogger(__name__)
 
 
 # package information base (no build information in this)
@@ -198,10 +203,13 @@ def pkg_infos_from_br_info(br_info):
 
 
 def pkg_infos_from_make(br_root_dir):
+    cmd = 'make -s --no-print-directory show-info'
+    _logger.info('Running `{}` (in `{}`).'.format(cmd, br_root_dir))
+
     # make `show-info` prints information about all the configured
     # packages as a JSON object
-    output = subprocess.check_output('make -s --no-print-directory show-info',
-                                     shell=True, cwd=br_root_dir)
+    output = subprocess.check_output(cmd, shell=True, cwd=br_root_dir)
+    _logger.info('Ran `{}`.'.format(cmd))
     return pkg_infos_from_br_info(json.loads(output))
 
 
@@ -224,11 +232,13 @@ class PkgBuild:
     def __init__(self, info, br_build_dir):
         self._info = info
         pkg_dir = info.name
+        self._logger = yobr.utils._get_obj_logger(self, info.name)
 
         if info.version is not None:
             pkg_dir += '-{}'.format(info.version)
 
         self._build_dir = os.path.join(br_build_dir, pkg_dir)
+        self._logger.debug('Created: build directory is `{}`.'.format(self._build_dir))
 
     @property
     def info(self):
@@ -254,7 +264,9 @@ class PkgBuild:
     # the `.stamp_` prefix)
     def has_stamp(self, name):
         stamp_file = PkgBuild._STAMP_FILE_PREFIX + name
-        return os.path.exists(os.path.join(self._build_dir, stamp_file))
+        path = os.path.join(self._build_dir, stamp_file)
+        self._logger.debug('Checking if  `{}` exists.'.format(path))
+        return os.path.exists(path)
 
     @property
     def is_downloaded(self):
