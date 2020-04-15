@@ -19,5 +19,5 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 __description__ = 'Graphical Buildroot build monitor'
